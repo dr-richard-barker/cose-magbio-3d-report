@@ -1,0 +1,14 @@
+Copyright (c) 2026 Collaborative Science Environment Inc. (CoSE)
+
+This repository is dual-licensed by content type:
+
+- Hardware design files — parametric CAD sources and outputs (STEP, STL),
+  drawings, PCB/schematic and mechanical specifications, and the hardware
+  documentation that describes them — are licensed under the
+  CERN Open Hardware Licence Version 2 – Strongly Reciprocal (CERN-OHL-S-2.0).
+  See LICENSE-CERN-OHL-S-2.0.txt.
+
+- Software — firmware, build/QA scripts, and the Interactive Report code —
+  is licensed under the MIT License. See LICENSE-MIT.txt.
+
+SPDX-License-Identifier: CERN-OHL-S-2.0 AND MIT
