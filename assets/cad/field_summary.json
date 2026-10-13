@@ -1,0 +1,201 @@
+{
+  "engine_rel_error": 2.5384688269181055e-06,
+  "ambient_uT_per_axis": 50.0,
+  "residual_target_uT": 0.5,
+  "axes": {
+    "X": {
+      "rank": "inner",
+      "turns": 124,
+      "a_mean_mm": 201.77333333333334,
+      "half_spacing_mm": 54.92679413237841,
+      "uT_per_A": 1001.5434877333673,
+      "ohms": 16.43116704186455,
+      "wire_m": 195.09816007913264,
+      "i_null_mA": 49.92294454747739,
+      "p_null_mW": 40.9514040642298,
+      "b_at_imax_uT": 250.38587193334183,
+      "v_at_imax": 4.107791760466138,
+      "p_at_imax_W": 1.0269479401165345,
+      "nonuniformity_pct": 0.6811246307537121,
+      "legacy_nonuniformity_pct": 15.731836086520207,
+      "curvature_pct_at_10mm": -0.004329474824088513
+    },
+    "Y": {
+      "rank": "middle",
+      "turns": 138,
+      "a_mean_mm": 224.40222222222224,
+      "half_spacing_mm": 61.08807895464751,
+      "uT_per_A": 1002.1259422837479,
+      "ohms": 20.377759053475824,
+      "wire_m": 241.9586684098293,
+      "i_null_mA": 49.89392838793779,
+      "p_null_mW": 50.728476732363234,
+      "b_at_imax_uT": 250.53148557093698,
+      "v_at_imax": 5.094439763368956,
+      "p_at_imax_W": 1.273609940842239,
+      "nonuniformity_pct": 0.46687235017734974,
+      "legacy_nonuniformity_pct": 13.895287354244429,
+      "curvature_pct_at_10mm": -0.0027172934768695377
+    },
+    "Z": {
+      "rank": "outer",
+      "turns": 152,
+      "a_mean_mm": 247.0311111111111,
+      "half_spacing_mm": 67.24923275706065,
+      "uT_per_A": 1002.6077782112853,
+      "ohms": 24.74870531847089,
+      "wire_m": 293.8578166524684,
+      "i_null_mA": 49.8699502303913,
+      "p_null_mW": 61.550325527131015,
+      "b_at_imax_uT": 250.65194455282133,
+      "v_at_imax": 6.1871763296177225,
+      "p_at_imax_W": 1.5467940824044306,
+      "nonuniformity_pct": 0.30474334300383266,
+      "legacy_nonuniformity_pct": 15.731836086520207,
+      "curvature_pct_at_10mm": -0.001761171764083012
+    }
+  },
+  "dish_volume": {
+    "n": 3,
+    "dish_d_mm": 55.6,
+    "dish_h_mm": 15.0,
+    "pitch_mm": 17.6,
+    "points": 729
+  },
+  "residual_uT": {
+    "centre": 6.776263578034403e-15,
+    "mean": 0.10487079126536794,
+    "max": 0.47785935988717415
+  },
+  "residual_null_at_sensor_uT": {
+    "sensor_z_mm": -36.3,
+    "at_centre": 0.5167342314821571,
+    "max": 0.9795598134473549
+  },
+  "legacy_residual_uT": {
+    "max": 15.399831616229198,
+    "mean": 5.538456193440201
+  },
+  "per_dish_uT": [
+    {
+      "dish": 1,
+      "y_mm": -17.599999999999998,
+      "max_uT": 0.47785935988717415,
+      "mean_uT": 0.12881896428410805,
+      "core_max_uT": 0.2297604476422671
+    },
+    {
+      "dish": 2,
+      "y_mm": 0.0,
+      "max_uT": 0.27980708093478673,
+      "mean_uT": 0.05697444522788769,
+      "core_max_uT": 0.0438452533336364
+    },
+    {
+      "dish": 3,
+      "y_mm": 17.6,
+      "max_uT": 0.4778593598871695,
+      "mean_uT": 0.12881896428410808,
+      "core_max_uT": 0.22976044764227893
+    }
+  ],
+  "tolerance": {
+    "mm": 0.5,
+    "deg": 0.5,
+    "rows": [
+      {
+        "case": "one X coil +0.5 mm",
+        "axis": "X",
+        "max_uT": 0.4783474262252353
+      },
+      {
+        "case": "X gap +1.0 mm (both coils out)",
+        "axis": "X",
+        "max_uT": 0.46291843820485873
+      },
+      {
+        "case": "one X coil tilted 0.5\u00b0 (squareness)",
+        "axis": "X",
+        "max_uT": 0.567735371011393
+      },
+      {
+        "case": "whole X pair rotated 0.5\u00b0 (non-orthogonal)",
+        "axis": "X",
+        "max_uT": 0.4753833291473734
+      },
+      {
+        "case": "one Y coil +0.5 mm",
+        "axis": "Y",
+        "max_uT": 0.47367039090744906
+      },
+      {
+        "case": "Y gap +1.0 mm (both coils out)",
+        "axis": "Y",
+        "max_uT": 0.45971052607386403
+      },
+      {
+        "case": "one Y coil tilted 0.5\u00b0 (squareness)",
+        "axis": "Y",
+        "max_uT": 0.5706487557162445
+      },
+      {
+        "case": "whole Y pair rotated 0.5\u00b0 (non-orthogonal)",
+        "axis": "Y",
+        "max_uT": 0.47511892212066964
+      },
+      {
+        "case": "one Z coil +0.5 mm",
+        "axis": "Z",
+        "max_uT": 0.4897579309203874
+      },
+      {
+        "case": "Z gap +1.0 mm (both coils out)",
+        "axis": "Z",
+        "max_uT": 0.4990658004560246
+      },
+      {
+        "case": "one Z coil tilted 0.5\u00b0 (squareness)",
+        "axis": "Z",
+        "max_uT": 0.5177648235520708
+      },
+      {
+        "case": "whole Z pair rotated 0.5\u00b0 (non-orthogonal)",
+        "axis": "Z",
+        "max_uT": 0.47688562184145783
+      }
+    ]
+  },
+  "nested_circular_residual_uT": {
+    "max": 0.7677300875666134,
+    "mean": 0.15233108777459575
+  },
+  "legacy_uT_per_A_100_turns": 382.92606009048353,
+  "target_sphere_radius_mm": 33.46435546875,
+  "residual_90mm_dishes_this_cage_uT": 2.141193972453412,
+  "cage_size_for_target_mm": {
+    "current_dishes": 262.0,
+    "90mm_dishes": 373.5546875
+  },
+  "envelope_mm": 262.0,
+  "base_bottom_z_mm": -124.0,
+  "dishes": {
+    "n": 3,
+    "d_mm": 55.6,
+    "h_mm": 15.0
+  },
+  "target_met": true,
+  "drive_ok": true,
+  "capacity_ok": true,
+  "worst_case_bundle_mm": {
+    "X": 4.487777777777778,
+    "Y": 4.487777777777778,
+    "Z": 5.128888888888889
+  },
+  "per_layer_max_od": 20,
+  "engine_ok": true,
+  "null_currents_mA": [
+    -49.922944547477385,
+    -49.89392838793779,
+    -49.8699502303913
+  ]
+}

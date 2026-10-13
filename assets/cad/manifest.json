@@ -1,0 +1,63 @@
+{
+  "units": "mm",
+  "up": "+Z",
+  "generated": "2026-10-12",
+  "groups": [
+    {
+      "key": "base",
+      "label": "Base plate, pedestal & sensor bay",
+      "color": "#2F5985",
+      "file": "base.stl",
+      "count": 7,
+      "reference_only": false
+    },
+    {
+      "key": "formers_x",
+      "label": "X-pair formers (inner)",
+      "color": "#3B6EA5",
+      "file": "formers_x.stl",
+      "count": 8,
+      "reference_only": false
+    },
+    {
+      "key": "formers_y",
+      "label": "Y-pair formers (middle)",
+      "color": "#3FB6A8",
+      "file": "formers_y.stl",
+      "count": 8,
+      "reference_only": false
+    },
+    {
+      "key": "formers_z",
+      "label": "Z-pair formers (outer)",
+      "color": "#54C9BA",
+      "file": "formers_z.stl",
+      "count": 8,
+      "reference_only": false
+    },
+    {
+      "key": "windings",
+      "label": "AWG24 windings (reference)",
+      "color": "#B87333",
+      "file": "windings.stl",
+      "count": 6,
+      "reference_only": true
+    },
+    {
+      "key": "rack",
+      "label": "3-slot Petri rack",
+      "color": "#E9ECEF",
+      "file": "rack.stl",
+      "count": 1,
+      "reference_only": false
+    },
+    {
+      "key": "dishes",
+      "label": "55.6 \u00d7 15 mm Petri dishes (reference)",
+      "color": "#F8F9FA",
+      "file": "dishes.stl",
+      "count": 3,
+      "reference_only": true
+    }
+  ]
+}

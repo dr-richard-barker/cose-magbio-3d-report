@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoSE MagBio-3D Report</title>
+  <meta name="description" content="Design-stage report for the CoSE MagBio-3D three-axis Helmholtz chamber: parametric CAD inspector, Biot–Savart field visualiser, bill of materials and dossiers.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <script>
+    // Apply the saved or system theme before first paint.
+    (function () {
+      let t = null;
+      try { t = localStorage.getItem('magbio-theme'); } catch (e) {}
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <style>
+    /* ---- CoSE palette: navy #2F5985 · accent blue #3B6EA5 · teal #3FB6A8 · mint #54C9BA ---- */
+    :root {
+      --cose-navy: #2F5985; --cose-blue: #3B6EA5; --cose-teal: #3FB6A8; --cose-mint: #54C9BA;
+      --bg: #F3F6FA;
+      --surface: #FFFFFF;
+      --surface-2: #EDF2F8;
+      --border: #D3DCE7;
+      --text: #13233A;
+      --text-2: #3F5068;
+      --muted: #66768C;
+      --accent: #2F5985;            /* interactive: navy on light */
+      --accent-ink: #FFFFFF;
+      --accent-soft: rgba(47, 89, 133, 0.10);
+      --brand-ink: #2F5985;         /* headings */
+      --teal-ink: #237E73;          /* teal dark enough for text on light */
+      --viewer-bg: #E8EEF5;
+      --envelope: #9AAAC0;
+      --good: #1E7F4F; --good-soft: rgba(30, 127, 79, 0.10);
+      --warn: #9A5B00; --warn-soft: rgba(196, 122, 0, 0.12);
+      --bad: #B3261E;  --bad-soft: rgba(179, 38, 30, 0.10);
+      --ax-x: #3B6EA5; --ax-y: #3FB6A8; --ax-z: #B87333;   /* validated (dataviz validator, light) */
+      --shadow: 0 1px 2px rgba(19, 35, 58, 0.06), 0 6px 18px rgba(19, 35, 58, 0.06);
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0B1422; --surface: #111D30; --surface-2: #17263D; --border: #253852;
+        --text: #E7EEF7; --text-2: #B6C4D6; --muted: #8796AC;
+        --accent: #54C9BA; --accent-ink: #062320; --accent-soft: rgba(84, 201, 186, 0.12);
+        --brand-ink: #8DB7E6; --teal-ink: #54C9BA;
+        --viewer-bg: #0E1A2B; --envelope: #3A4F6B;
+        --good: #4CC38A; --good-soft: rgba(76, 195, 138, 0.12);
+        --warn: #E8A33D; --warn-soft: rgba(232, 163, 61, 0.12);
+        --bad: #F2766B; --bad-soft: rgba(242, 118, 107, 0.12);
+        --ax-x: #5B78D6; --ax-y: #2FA597; --ax-z: #C27A3A;   /* validated (dark) */
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0B1422; --surface: #111D30; --surface-2: #17263D; --border: #253852;
+      --text: #E7EEF7; --text-2: #B6C4D6; --muted: #8796AC;
+      --accent: #54C9BA; --accent-ink: #062320; --accent-soft: rgba(84, 201, 186, 0.12);
+      --brand-ink: #8DB7E6; --teal-ink: #54C9BA;
+      --viewer-bg: #0E1A2B; --envelope: #3A4F6B;
+      --good: #4CC38A; --good-soft: rgba(76, 195, 138, 0.12);
+      --warn: #E8A33D; --warn-soft: rgba(232, 163, 61, 0.12);
+      --bad: #F2766B; --bad-soft: rgba(242, 118, 107, 0.12);
+      --ax-x: #5B78D6; --ax-y: #2FA597; --ax-z: #C27A3A;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text);
+      line-height: 1.55; overflow-x: hidden; transition: background-color 0.2s, color 0.2s;
+    }
+    code, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.9em; }
+    code { background: var(--surface-2); padding: 0.05rem 0.3rem; border-radius: 4px; }
+    a { color: var(--accent); }
+
+    /* ---- header & tabs ---- */
+    header {
+      position: sticky; top: 0; z-index: 50; background: var(--surface);
+      border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .head-row {
+      max-width: 1400px; margin: 0 auto; padding: 0.8rem 1.25rem 0;
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .brand-mark { width: 30px; height: 30px; flex: none; }
+    .brand h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; color: var(--brand-ink); white-space: nowrap; }
+    .brand .sub { font-size: 0.78rem; color: var(--muted); }
+    .badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 0.15rem 0.55rem;
+      border-radius: 999px; border: 1px solid var(--warn); color: var(--warn); background: var(--warn-soft);
+      white-space: nowrap;
+    }
+    .spacer { flex: 1; }
+    .icon-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem; background: var(--surface-2);
+      color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.7rem;
+      font: 500 0.8rem 'Inter', sans-serif; cursor: pointer;
+    }
+    .icon-btn:hover { border-color: var(--accent); }
+    .icon-btn svg { width: 16px; height: 16px; }
+    .tabs {
+      max-width: 1400px; margin: 0 auto; padding: 0 1.25rem; display: flex; gap: 0.25rem;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted);
+      font: 600 0.88rem 'Inter', sans-serif; padding: 0.75rem 0.85rem 0.6rem; cursor: pointer; white-space: nowrap;
+    }
+    .tab:hover { color: var(--text); }
+    .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+    @media (max-width: 640px) { .brand .sub { display: none; } .head-row { padding-top: 0.6rem; } .badge { font-size: 0.65rem; } }
+    .tab .new { font-size: 0.65rem; margin-left: 0.35rem; padding: 0.05rem 0.35rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+
+    main { max-width: 1400px; margin: 0 auto; padding: 1.25rem; }
+    .notice {
+      margin-bottom: 1.25rem; padding: 0.75rem 1rem; border: 1px solid var(--warn); background: var(--warn-soft);
+      border-radius: 10px; font-size: 0.85rem; color: var(--text);
+    }
+    .panel[hidden] { display: none; }
+
+    /* ---- cards & layout ---- */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.2rem; box-shadow: var(--shadow); min-width: 0; }
+    .card h2 { font-size: 1rem; font-weight: 650; color: var(--brand-ink); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .card h2 svg { width: 18px; height: 18px; flex: none; }
+    .card h3 { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0.9rem 0 0.45rem; }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+    .grid-field { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+    .stack { display: grid; gap: 1.25rem; }
+    @media (max-width: 960px) { .grid-2, .grid-field { grid-template-columns: 1fr; } }
+    .note { font-size: 0.78rem; color: var(--muted); margin-top: 0.7rem; }
+
+    /* ---- viewers ---- */
+    .viewer { position: relative; width: 100%; height: 520px; border-radius: 10px; overflow: hidden; background: var(--viewer-bg); border: 1px solid var(--border); }
+    .viewer canvas { display: block; }
+    @media (max-width: 640px) { .viewer { height: 380px; } }
+    .overlay {
+      position: absolute; left: 10px; font: 0.72rem 'JetBrains Mono', monospace; color: var(--text-2);
+      background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 9px; pointer-events: none; max-width: calc(100% - 20px);
+    }
+    .overlay.top { top: 10px; }
+    .overlay.bottom { bottom: 10px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin: 0.75rem 0 0.25rem; }
+    .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .seg button { background: var(--surface); color: var(--text-2); border: none; border-right: 1px solid var(--border); padding: 0.35rem 0.65rem; font: 500 0.78rem 'Inter', sans-serif; cursor: pointer; }
+    .seg button:last-child { border-right: none; }
+    .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+    .btn { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 0.38rem 0.7rem; font: 500 0.78rem 'Inter', sans-serif; cursor: pointer; }
+    .btn:hover { border-color: var(--accent); }
+    .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+    .chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border: 1px solid var(--border); border-radius: 999px; font-size: 0.76rem; color: var(--text-2); cursor: pointer; user-select: none; background: var(--surface); }
+    .chip input { accent-color: var(--accent); }
+    .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,0.15); }
+    label.inline { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-2); }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    select, input[type=number] {
+      background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.25rem 0.4rem; font: 0.8rem 'JetBrains Mono', monospace;
+    }
+
+    /* ---- stats & tables ---- */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
+    .stat { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.8rem; }
+    .stat .v { font: 700 1.3rem 'JetBrains Mono', monospace; color: var(--text); }
+    .stat .k { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat .s { font-size: 0.75rem; color: var(--text-2); margin-top: 0.15rem; }
+    .status { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 6px; }
+    .status.good { color: var(--good); background: var(--good-soft); }
+    .status.warn { color: var(--warn); background: var(--warn-soft); }
+    .status.bad { color: var(--bad); background: var(--bad-soft); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { padding: 0.45rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.76rem; }
+    td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    .table-wrap { overflow-x: auto; }
+
+    /* ---- field controls ---- */
+    .ctl { margin-bottom: 0.85rem; }
+    .ctl-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; }
+    .ctl-head .name { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; }
+    .ctl-head input[type=number] { width: 6.2rem; text-align: right; }
+    .ctl-sub { font: 0.72rem 'JetBrains Mono', monospace; color: var(--muted); }
+    .presets { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+    /* ---- slice plot ---- */
+    .slice-wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 0.6rem; align-items: stretch; }
+    #slice { width: 100%; aspect-ratio: 1 / 1; display: block; border-radius: 8px; border: 1px solid var(--border); background: var(--viewer-bg); cursor: crosshair; }
+    #colorbar { width: 64px; height: 100%; display: block; }
+    .tooltip {
+      position: absolute; pointer-events: none; z-index: 5; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.6rem; box-shadow: var(--shadow);
+      font: 0.74rem 'JetBrains Mono', monospace; white-space: nowrap; display: none;
+    }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.76rem; color: var(--text-2); margin-top: 0.55rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .legend .line { width: 18px; border-top: 2px dashed var(--text); }
+    .legend .dish { width: 14px; height: 10px; border: 1.5px solid var(--text); border-radius: 2px; }
+
+    /* ---- dossiers ---- */
+    .dossier-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.85rem; }
+    .dossier-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+    .dossier-num { font: 0.7rem 'JetBrains Mono', monospace; color: var(--teal-ink); margin-bottom: 0.2rem; }
+    .dossier-title { font-size: 0.92rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .dossier-desc { font-size: 0.8rem; color: var(--text-2); }
+    footer { max-width: 1400px; margin: 0 auto; padding: 1rem 1.25rem 2rem; font-size: 0.75rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="head-row">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="3" y="3" width="26" height="26" rx="6" fill="none" style="stroke: var(--cose-blue)" stroke-width="2.4"/>
+        <rect x="8.5" y="8.5" width="15" height="15" rx="3.5" fill="none" style="stroke: var(--cose-teal)" stroke-width="2.4"/>
+        <circle cx="16" cy="16" r="2.6" style="fill: var(--cose-mint)"/>
+      </svg>
+      <div>
+        <h1>CoSE MagBio-3D™</h1>
+        <div class="sub">Three-axis closed-loop Helmholtz chamber for biology</div>
+      </div>
+    </div>
+    <span class="badge">Design stage — not built</span>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch colour theme">
+      <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
+      <span id="theme-label">Dark</span>
+    </button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Report sections">
+    <button class="tab" role="tab" id="tab-inspector" aria-controls="panel-inspector" data-tab="inspector">Chamber Inspector</button>
+    <button class="tab" role="tab" id="tab-field" aria-controls="panel-field" data-tab="field">Field Visualizer<span class="new">new</span></button>
+    <button class="tab" role="tab" id="tab-cost" aria-controls="panel-cost" data-tab="cost">Cost &amp; BOM</button>
+    <button class="tab" role="tab" id="tab-dossiers" aria-controls="panel-dossiers" data-tab="dossiers">13 Dossiers</button>
+  </nav>
+</header>
+
+<main>
+  <div class="notice">
+    <strong>Status: design stage.</strong> No MagBio-3D cage has been wound and no driver or firmware has been built;
+    nothing on this page has been measured. Geometry, fields, power and costs are outputs of the scripts in
+    <code>cad/</code> (regenerate with <code>cad/build.py</code>) or targets. The DIY 143 mm reference-cage tutorial is
+    in <code>ref_repo/</code>.
+  </div>
+
+  <!-- ===================== CHAMBER INSPECTOR ===================== -->
+  <section class="panel" id="panel-inspector" role="tabpanel" aria-labelledby="tab-inspector">
+    <div class="grid-2">
+      <div class="card">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>
+          3-Axis Chamber Inspector (parametric CAD)
+        </h2>
+        <div class="viewer" id="cad-viewer">
+          <div class="overlay top" id="cad-status">Loading assets/cad/ …</div>
+          <div class="overlay bottom">Drag rotate · scroll zoom · right-drag pan</div>
+        </div>
+        <div class="toolbar">
+          <div class="seg" role="group" aria-label="View">
+            <button type="button" data-view="iso" aria-pressed="true">Iso</button>
+            <button type="button" data-view="front">Front</button>
+            <button type="button" data-view="top">Top</button>
+            <button type="button" data-view="side">Side</button>
+          </div>
+          <button class="btn" type="button" id="cut-btn" aria-pressed="false">Section cut</button>
+          <select id="cut-axis" aria-label="Section cut normal">
+            <option value="x">normal to X</option>
+            <option value="y" selected>normal to Y</option>
+            <option value="z">normal to Z</option>
+          </select>
+          <input type="range" id="cut-pos" min="-140" max="140" step="1" value="0" style="width:140px" aria-label="Section cut position (mm)">
+          <span class="ctl-sub" id="cut-val">0 mm</span>
+        </div>
+        <div class="chips" id="layer-toggles"></div>
+        <p class="note">Meshes are generated by <code>cad/build.py</code> from <code>cad/magbio_params.py</code>: nested
+          square Helmholtz pairs (Z outer, Y middle, X inner), split formers, rack and base. Copper windings and the Petri
+          dishes are reference solids. The section cut removes the half facing the view buttons (X: side, Y: front, Z: top), so those views look straight into it.</p>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>
+            Design at a glance (model)
+          </h2>
+          <div class="stats" id="glance">
+            <div class="stat"><div class="k">Loading</div><div class="v">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            Coil pairs
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Axis</th><th>Rank</th><th class="num">Turns</th><th class="num">µT/A</th><th class="num">R (Ω)</th><th class="num">Null (mA)</th></tr></thead>
+              <tbody id="pairs-body"><tr><td colspan="6">Loading assets/cad/field_summary.json …</td></tr></tbody>
+            </table>
+          </div>
+          <p class="note" id="pairs-note"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FIELD VISUALIZER ===================== -->
+  <section class="panel" id="panel-field" role="tabpanel" aria-labelledby="tab-field" hidden>
+    <div class="grid-field">
+      <!-- controls -->
+      <div class="card">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+          Coil currents
+        </h2>
+        <div id="current-ctls"></div>
+        <h3>Presets</h3>
+        <div class="presets">
+          <button class="btn" type="button" data-preset="off">Coils off</button>
+          <button class="btn" type="button" data-preset="null">Null ambient</button>
+          <button class="btn" type="button" data-preset="nullz">Null + 100 µT on Z</button>
+          <button class="btn" type="button" data-preset="xonly">X pair, 100 mA</button>
+          <button class="btn" type="button" data-preset="max">All +250 mA</button>
+        </div>
+        <h3>Ambient field</h3>
+        <label class="inline"><input type="checkbox" id="amb-on" checked> Include assumed ambient</label>
+        <div class="ctl-sub" id="amb-note" style="margin-top:0.25rem;"></div>
+        <h3>Readouts</h3>
+        <div class="stats" id="field-stats"></div>
+        <div class="table-wrap" style="margin-top:0.6rem;">
+          <table>
+            <thead><tr><th>Axis</th><th class="num">I (mA)</th><th class="num">V</th><th class="num">P (mW)</th><th class="num">B (µT)</th></tr></thead>
+            <tbody id="drive-body"></tbody>
+          </table>
+        </div>
+        <p class="note" id="model-check">Loading the coil model …</p>
+      </div>
+
+      <!-- plots -->
+      <div class="stack">
+        <div class="card">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+            Field map — slice through the chamber
+          </h2>
+          <div class="toolbar" style="margin-top:0">
+            <div class="seg" role="group" aria-label="Slice plane">
+              <button type="button" data-plane="XY" aria-pressed="true">XY</button>
+              <button type="button" data-plane="XZ">XZ</button>
+              <button type="button" data-plane="YZ">YZ</button>
+            </div>
+            <label class="inline"><span id="off-name">Z</span> =
+              <input type="range" id="slice-off" min="-120" max="120" step="1" value="0" style="width:130px" aria-label="Slice offset (mm)">
+              <span class="ctl-sub" id="off-val">0 mm</span></label>
+            <div class="seg" role="group" aria-label="Quantity">
+              <button type="button" data-qty="total" aria-pressed="true" title="Ambient plus coils: what the samples experience">|B| total</button>
+              <button type="button" data-qty="coils" title="The coils' own field">|B| coils</button>
+              <button type="button" data-qty="dev" title="Departure from the field at the centre">|ΔB| vs centre</button>
+            </div>
+            <div class="seg" role="group" aria-label="Colour scale">
+              <button type="button" data-scale="log" aria-pressed="true" title="Fixed 0.01–1000 µT: compare settings, see the 0.5 µT target">Log</button>
+              <button type="button" data-scale="lin" title="Linear, auto range (2nd–98th percentile of this slice): shows small variations">Linear</button>
+            </div>
+            <label class="inline"><input type="checkbox" id="arrows-on" checked> Arrows</label>
+          </div>
+          <div class="slice-wrap">
+            <canvas id="slice" role="img" aria-label="Heat map of field magnitude on the selected slice"></canvas>
+            <canvas id="colorbar" aria-hidden="true"></canvas>
+            <div class="tooltip" id="slice-tip"></div>
+          </div>
+          <div class="legend" id="slice-legend"></div>
+          <p class="note" id="slice-status">—</p>
+        </div>
+
+        <div class="card">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><path d="m5 5 14 14M19 5 5 19" opacity=".5"/></svg>
+            Field in 3D — direction arrows and field lines
+          </h2>
+          <div class="viewer" id="field3d" style="height:460px">
+            <div class="overlay top" id="f3d-status">—</div>
+            <div class="overlay bottom">Arrows: direction of the selected quantity; size and colour show magnitude (same scale as the map)</div>
+          </div>
+          <div class="toolbar">
+            <label class="inline"><input type="checkbox" id="f3d-arrows" checked> Arrows</label>
+            <label class="inline"><input type="checkbox" id="f3d-lines" checked> Field lines</label>
+            <label class="inline"><input type="checkbox" id="f3d-dishes" checked> Dishes</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="4"/><path d="M3 12v3c0 2.2 4 4 9 4s9-1.8 9-4v-3"/></svg>
+            Field in each dish (total field)
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Dish</th><th class="num">Centre y (mm)</th><th class="num">Max |B| (µT)</th><th class="num">Mean |B| (µT)</th><th>vs 0.5 µT target</th></tr></thead>
+              <tbody id="dish-body"></tbody>
+            </table>
+          </div>
+          <p class="note">Sampled at the same points as <code>FIELD_UNIFORMITY.md</code> (three layers of an 11 × 11 grid inside each dish).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== COST & BOM ===================== -->
+  <section class="panel" id="panel-cost" role="tabpanel" aria-labelledby="tab-cost" hidden>
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Target Prices, Cost Ceilings &amp; Bill of Materials
+      </h2>
+      <div class="grid-2">
+        <div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tier</th><th class="num">Target price</th><th class="num">Under $5k P-card by</th><th class="num">COGS at 50 / 60 / 70 % margin</th></tr></thead>
+              <tbody id="headroom-body"><tr><td colspan="4">Loading assets/cad/bom_summary.json …</td></tr></tbody>
+            </table>
+          </div>
+          <p class="note">Cost ceilings are arithmetic on the target prices, <strong>not</strong> cost estimates. No supplier
+            quote exists and nothing has been built or sold, so no COGS, margin or revenue forecast is shown.</p>
+        </div>
+        <div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>BOM group</th><th class="num">Lines</th><th class="num">Pieces</th></tr></thead>
+              <tbody id="bom-body"></tbody>
+            </table>
+          </div>
+          <p class="note" id="bom-note"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DOSSIERS ===================== -->
+  <section class="panel" id="panel-dossiers" role="tabpanel" aria-labelledby="tab-dossiers" hidden>
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Master Engineering Dossier Suite (CoSE Standard)
+      </h2>
+      <div class="dossier-list">
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 01</div><div class="dossier-title">Investor &amp; Commercial Vision</div><div class="dossier-desc">Executive summary, market sizing (an internal estimate built on unverified lab counts), positioning vs quote-only physics coils.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 02</div><div class="dossier-title">Electromagnetic Physics &amp; Simulation</div><div class="dossier-desc">Square Helmholtz theory, Biot–Savart model, per-dish residual field, tolerance and margin studies (model outputs).</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 03</div><div class="dossier-title">Electrical Driver &amp; Feedback Spec</div><div class="dossier-desc">Composite current source per axis (OPA2192 + OPA548, decision D3), PNI RM3100 magnetometer, 100 Hz loop.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 04</div><div class="dossier-title">Parametric CAD &amp; Manufacturing</div><div class="dossier-desc">build123d pipeline and QA gates, split formers printed in PC, winding tables, brass fasteners, moulding DFM.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 05</div><div class="dossier-title">Biological Validation &amp; Petri Assays</div><div class="dossier-desc">Per-dish exposure (model), controls incl. bifilar sham, vertical-plate protocol for BRIC 60 mm dishes.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 06</div><div class="dossier-title">Firmware &amp; CoSE OS IoT Platform</div><div class="dossier-desc">FreeRTOS tasks, REST/WebSocket API, closed-loop nulling and feed-forward AC fields.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 07</div><div class="dossier-title">Cost Model, BOM &amp; Gated Roadmap</div><div class="dossier-desc">Unpriced bill of materials from the CAD, price-headroom arithmetic, dependency-ordered milestones.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 08</div><div class="dossier-title">Comparative Benchmark &amp; Moat</div><div class="dossier-desc">Architecture options and teardown vs Bartington and other commercial coil systems.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 09</div><div class="dossier-title">Mechanical Packaging &amp; Thermal</div><div class="dossier-desc">Part list, assembly sequence, squareness acceptance procedure, brass fasteners, thermal budget.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 10</div><div class="dossier-title">Harnessing, Shielding &amp; EMC</div><div class="dossier-desc">Twisted-pair routing, optional mu-metal pre-shield, planned FCC Part 15 / CE testing.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 11</div><div class="dossier-title">Go-To-Market &amp; Academic Sales</div><div class="dossier-desc">Personas, P-card pricing logic, grant-aligned selling and launch gates.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 12</div><div class="dossier-title">Grant Funding &amp; Production Plan</div><div class="dossier-desc">NASA and USDA SBIR fit, prototype-to-pilot build plan, candidate Midwest suppliers.</div></div>
+        <div class="dossier-card"><div class="dossier-num">DOSSIER 13</div><div class="dossier-title">Space Biology Synergy &amp; XSeed</div><div class="dossier-desc">Combining XSeed microgravity work with MagBio-3D magnetic control.</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Collaborative Science Environment Inc. · Madison, Wisconsin · Hardware CERN-OHL-S-2.0 · Software MIT ·
+  Data on this page: <code>assets/cad/</code>, written by <code>cad/build.py</code>.</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const AXES = ['X', 'Y', 'Z'];
+const fetchJson = url => fetch(url, { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); });
+
+// =============================================================== THEME ====
+const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+const MOON = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+function isDark() {
+  const t = document.documentElement.getAttribute('data-theme');
+  if (t) return t === 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function paintThemeButton() {
+  const dark = isDark();
+  $('theme-icon').innerHTML = dark ? SUN : MOON;
+  $('theme-label').textContent = dark ? 'Light' : 'Dark';
+  $('theme-btn').setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+}
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('magbio-theme', t); } catch (e) {}
+  onThemeChange();
+}
+$('theme-btn').addEventListener('click', () => setTheme(isDark() ? 'light' : 'dark'));
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (!document.documentElement.getAttribute('data-theme')) onThemeChange();
+});
+const themeListeners = [];
+function onThemeChange() { paintThemeButton(); themeListeners.forEach(f => f()); }
+paintThemeButton();
+
+// ================================================================ TABS ====
+const tabResize = {};
+function showTab(name, push) {
+  if (!document.getElementById('panel-' + name)) name = 'inspector';
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+  document.querySelectorAll('.panel').forEach(p => { p.hidden = p.id !== 'panel-' + name; });
+  if (push) history.replaceState(null, '', '#' + name);
+  if (tabResize[name]) requestAnimationFrame(tabResize[name]);
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab, true)));
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1), false));
+
+// ===================================================== THREE.JS HELPERS ====
+function makeViewer(container) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.localClippingEnabled = true;
+  container.insertBefore(renderer.domElement, container.firstChild);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(300, 500, 400); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-400, -100, -300); scene.add(fill);
+  // CAD frame is +Z up in mm; three.js is +Y up.
+  const cad = new THREE.Group(); cad.rotation.x = -Math.PI / 2; scene.add(cad);
+  const v = { scene, camera, renderer, controls, cad, container, radius: 200, center: new THREE.Vector3() };
+  v.resize = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+    if (v.lastDir && !v.userMoved) v.view(v.lastDir);   // keep the fit until the user takes over
+  };
+  controls.addEventListener('start', () => { v.userMoved = true; });
+  v.setBg = () => { scene.background = new THREE.Color(css('--viewer-bg')); };
+  v.view = (dir) => {   // dir in three.js coordinates; fit the bounding sphere in the narrower field of view
+    const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+    const d = v.radius / Math.sin(Math.min(vf, hf) / 2) * 1.05;
+    v.lastDir = dir.clone();
+    camera.position.copy(v.center).add(dir.clone().normalize().multiplyScalar(d));
+    camera.near = d / 50; camera.far = d * 10; camera.updateProjectionMatrix();
+    controls.target.copy(v.center); controls.update();
+  };
+  v.frame = () => {
+    const box = new THREE.Box3().setFromObject(cad);
+    if (box.isEmpty()) return;
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    v.center.copy(sphere.center); v.radius = sphere.radius;
+  };
+  new ResizeObserver(v.resize).observe(container);
+  v.resize(); v.setBg();
+  (function loop() { requestAnimationFrame(loop); if (container.clientWidth) { controls.update(); renderer.render(scene, camera); } })();
+  return v;
+}
+// CAD (x, y, z) -> three.js direction, matching the group's rotation.
+const cadDir = (x, y, z) => new THREE.Vector3(x, z, -y);
+const VIEWS = { iso: cadDir(1, -1.1, 0.8), front: cadDir(0, -1, 0.02), top: cadDir(0.001, -0.001, 1), side: cadDir(1, 0, 0.02) };
+
+// =================================================== CHAMBER INSPECTOR ====
+let SUMMARY = null;
+const cadV = makeViewer($('cad-viewer'));
+const cadMeshes = {};
+let envelopeLine = null;
+const cutPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+async function loadCad() {
+  const status = $('cad-status');
+  try {
+    const manifest = await fetchJson('assets/cad/manifest.json');
+    const loader = new THREE.STLLoader();
+    await Promise.all(manifest.groups.map(g => new Promise((resolve, reject) => {
+      loader.load('assets/cad/' + g.file, geom => {
+        geom.computeVertexNormals();
+        const glassy = g.key === 'dishes';
+        const mat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(g.color), roughness: g.key === 'windings' ? 0.35 : 0.62,
+          metalness: g.key === 'windings' ? 0.55 : 0.04, transparent: glassy, opacity: glassy ? 0.4 : 1,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        cadV.cad.add(mesh);
+        cadMeshes[g.key] = { mesh, group: g };
+        resolve();
+      }, undefined, reject);
+    })));
+    // Toggles in manifest order.
+    const box = $('layer-toggles');
+    manifest.groups.forEach(g => {
+      const lab = document.createElement('label');
+      lab.className = 'chip';
+      lab.innerHTML = `<input type="checkbox" checked><span class="swatch" style="background:${g.color}"></span>${g.label}`;
+      lab.querySelector('input').addEventListener('change', e => { cadMeshes[g.key].mesh.visible = e.target.checked; });
+      box.appendChild(lab);
+    });
+    cadV.frame(); cadV.view(VIEWS.iso);
+    status.textContent = `Parametric CAD · generated ${manifest.generated} · ${manifest.groups.length} layers`;
+  } catch (err) {
+    status.textContent = 'Could not load assets/cad/ — run cad/build.py, then serve this folder with serve.py.';
+    console.error(err);
+  }
+}
+
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-view]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  cadV.userMoved = false; cadV.view(VIEWS[b.dataset.view]);
+}));
+
+function applyCut() {
+  const on = $('cut-btn').getAttribute('aria-pressed') === 'true';
+  const c = parseFloat($('cut-pos').value);
+  $('cut-val').textContent = c + ' mm';
+  // Remove the half that faces the preset cameras (iso/side from +X, front from −Y, top from +Z):
+  // keep CAD x ≤ c, y ≥ c or z ≤ c. three.js frame: CAD y = −z3, CAD z = y3.
+  const ax = $('cut-axis').value;
+  const n = { x: new THREE.Vector3(-1, 0, 0), y: new THREE.Vector3(0, 0, -1), z: new THREE.Vector3(0, -1, 0) }[ax];
+  cutPlane.normal.copy(n); cutPlane.constant = ax === 'y' ? -c : c;
+  Object.values(cadMeshes).forEach(({ mesh }) => { mesh.material.clippingPlanes = on ? [cutPlane] : []; mesh.material.needsUpdate = true; });
+  if (envelopeLine) { envelopeLine.material.clippingPlanes = on ? [cutPlane] : []; }
+}
+$('cut-btn').addEventListener('click', () => {
+  const b = $('cut-btn'); b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); applyCut();
+});
+$('cut-axis').addEventListener('change', applyCut);
+$('cut-pos').addEventListener('input', applyCut);
+
+async function loadSummary() {
+  try {
+    SUMMARY = await fetchJson('assets/cad/field_summary.json');
+    const E = SUMMARY.envelope_mm, r = SUMMARY.residual_uT, d = SUMMARY.dishes;
+    envelopeLine = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(E, E, E)),
+      new THREE.LineBasicMaterial({ color: new THREE.Color(css('--envelope')) }));
+    envelopeLine.position.set(0, 0, SUMMARY.base_bottom_z_mm + E / 2);
+    cadV.cad.add(envelopeLine);
+    const margin = SUMMARY.residual_target_uT - r.max;
+    const met = SUMMARY.target_met;
+    const pnull = AXES.reduce((s, a) => s + SUMMARY.axes[a].p_null_mW, 0);
+    $('glance').innerHTML = [
+      ['Cage', `${E.toFixed(0)} mm`, 'cube envelope'],
+      ['Dishes', `${d.n} × Ø${d.d_mm}`, `${d.h_mm} mm tall, vertical rack`],
+      ['Residual, max', `${r.max.toFixed(2)} µT`, `mean ${r.mean.toFixed(2)} µT over the dishes`],
+      ['vs target', `${SUMMARY.residual_target_uT} µT`,
+        `<span class="status ${met ? 'good' : 'bad'}">${met ? '✓ met' : '✕ not met'}</span> margin ${margin.toFixed(2)} µT`],
+      ['Null power', `${pnull.toFixed(0)} mW`, `${SUMMARY.ambient_uT_per_axis} µT per axis nulled`],
+      ['Legacy layout', `${SUMMARY.legacy_residual_uT.max.toFixed(1)} µT`, 'six-bobbin design, same test'],
+    ].map(([k, v, s]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+    $('pairs-body').innerHTML = AXES.map(a => {
+      const x = SUMMARY.axes[a];
+      return `<tr><td><span class="swatch" style="display:inline-block;background:var(--ax-${a.toLowerCase()});margin-right:0.4rem;vertical-align:-1px"></span>${a}</td>` +
+        `<td>${x.rank}</td><td class="num">${x.turns}</td><td class="num">${x.uT_per_A.toFixed(0)}</td>` +
+        `<td class="num">${x.ohms.toFixed(1)}</td><td class="num">${x.i_null_mA.toFixed(1)}</td></tr>`;
+    }).join('');
+    $('pairs-note').innerHTML = `Model outputs from <code>FIELD_UNIFORMITY.md</code>: AWG24, ${SUMMARY.ambient_uT_per_axis} µT per axis nulled at the centre. ` +
+      `A single coil tilted 0.08° can use up the whole margin (<code>ACCEPTANCE_LIMITS.md</code>).`;
+  } catch (err) {
+    $('pairs-body').innerHTML = '<tr><td colspan="6">Could not load assets/cad/field_summary.json — run cad/build.py.</td></tr>';
+    console.error(err);
+  }
+}
+
+themeListeners.push(() => {
+  cadV.setBg();
+  if (envelopeLine) envelopeLine.material.color.set(css('--envelope'));
+});
+tabResize.inspector = cadV.resize;
+
+// ===================================================== FIELD MODEL (JS) ====
+// Exact port of cad/magfield.segments_field: B of straight segments, summed
+// over every filament loop exported by cad/checks/field_export.py.
+const MODEL = { ready: false };
+function loadSegments(loops) {
+  let n = 0; loops.forEach(l => { n += l.length - 1; });
+  const s = new Float64Array(n * 6); let k = 0;
+  for (const l of loops) for (let i = 0; i < l.length - 1; i++) {
+    s[k++] = l[i][0] / 1000; s[k++] = l[i][1] / 1000; s[k++] = l[i][2] / 1000;
+    s[k++] = l[i + 1][0] / 1000; s[k++] = l[i + 1][1] / 1000; s[k++] = l[i + 1][2] / 1000;
+  }
+  return s;
+}
+// Unit-current field of one axis at (x, y, z) mm, in µT per amp, written to out[o..o+2].
+function axisField(ai, x, y, z, out, o) {
+  const s = MODEL.segs[ai]; x /= 1000; y /= 1000; z /= 1000;
+  let bx = 0, by = 0, bz = 0;
+  for (let i = 0, n = s.length; i < n; i += 6) {
+    const r1x = x - s[i], r1y = y - s[i + 1], r1z = z - s[i + 2];
+    const r2x = x - s[i + 3], r2y = y - s[i + 4], r2z = z - s[i + 5];
+    const n1 = Math.sqrt(r1x * r1x + r1y * r1y + r1z * r1z), n2 = Math.sqrt(r2x * r2x + r2y * r2y + r2z * r2z);
+    const den = n1 * n2 * (n1 * n2 + r1x * r2x + r1y * r2y + r1z * r2z);
+    if (Math.abs(den) < 1e-30) continue;
+    const f = (n1 + n2) / den;
+    bx += (r1y * r2z - r1z * r2y) * f; by += (r1z * r2x - r1x * r2z) * f; bz += (r1x * r2y - r1y * r2x) * f;
+  }
+  const k = 1e-7 * MODEL.ampTurns[ai] * 1e6;      // µ0/4π · amp-turns per filament · T→µT
+  out[o] = bx * k; out[o + 1] = by * k; out[o + 2] = bz * k;
+}
+// All three axes: out[0..8] = X(bx,by,bz), Y(...), Z(...).
+function unitFields(x, y, z, out, o = 0) { for (let a = 0; a < 3; a++) axisField(a, x, y, z, out, o + 3 * a); }
+
+const STATE = { I: [0, 0, 0], ambOn: true, qty: 'total', plane: 'XY', off: 0, arrows: true };
+function ambient() { return STATE.ambOn ? [MODEL.amb, MODEL.amb, MODEL.amb] : [0, 0, 0]; }
+// Combine unit fields u (9 numbers at offset o) with the currents.
+function coilVec(u, o, I = STATE.I) {
+  return [I[0] * u[o] + I[1] * u[o + 3] + I[2] * u[o + 6],
+          I[0] * u[o + 1] + I[1] * u[o + 4] + I[2] * u[o + 7],
+          I[0] * u[o + 2] + I[1] * u[o + 5] + I[2] * u[o + 8]];
+}
+function quantityVec(u, o) {
+  const c = coilVec(u, o);
+  if (STATE.qty === 'coils') return c;
+  const A = ambient();
+  const t = [A[0] + c[0], A[1] + c[1], A[2] + c[2]];
+  if (STATE.qty === 'total') return t;
+  const c0 = coilVec(MODEL.centreU, 0);
+  return [t[0] - (A[0] + c0[0]), t[1] - (A[1] + c0[1]), t[2] - (A[2] + c0[2])];
+}
+const mag = v => Math.hypot(v[0], v[1], v[2]);
+
+function solve3(M, b) {   // Cramer's rule; M is row-major 3×3
+  const d = m => m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]);
+  const D = d(M);
+  return [0, 1, 2].map(c => { const m = M.slice(); for (let r = 0; r < 3; r++) m[3 * r + c] = b[r]; return d(m) / D; });
+}
+function nullCurrents(target = [0, 0, 0]) {
+  const u = MODEL.centreU, A = ambient();
+  // Column a of M is axis a's unit field at the centre.
+  const M = [u[0], u[3], u[6], u[1], u[4], u[7], u[2], u[5], u[8]];
+  return solve3(M, [target[0] - A[0], target[1] - A[1], target[2] - A[2]]);
+}
+
+function dishPoints() {   // port of field_uniformity.dish_points (mm)
+  const g = MODEL.geom, r = g.dish_d_mm / 2, pts = [], k = 11;
+  for (let i = 0; i < g.n_dishes; i++) {
+    const yc = (i - (g.n_dishes - 1) / 2) * g.dish_pitch_mm;
+    for (let a = 0; a < 3; a++) {
+      const y = yc - g.dish_h_mm / 2 + a * g.dish_h_mm / 2;
+      for (let p = 0; p < k; p++) for (let q = 0; q < k; q++) {
+        const x = -r + 2 * r * p / (k - 1), z = -r + 2 * r * q / (k - 1);
+        if (x * x + z * z <= r * r + 1e-9) pts.push([x, y, z, i]);
+      }
+    }
+  }
+  return pts;
+}
+
+async function loadModel() {
+  try {
+    const m = await fetchJson('assets/cad/coil_model.json');
+    MODEL.raw = m;
+    MODEL.segs = AXES.map(a => loadSegments(m.axes[a].loops_mm));
+    MODEL.ampTurns = AXES.map(a => m.axes[a].amp_turns_per_filament);
+    MODEL.ohms = AXES.map(a => m.axes[a].ohms);
+    MODEL.imax = m.drive.i_max_A; MODEL.vavail = m.drive.v_available;
+    MODEL.amb = m.drive.ambient_uT_per_axis; MODEL.target = m.drive.target_uT;
+    MODEL.geom = m.geometry;
+    MODEL.centreU = new Float64Array(9); unitFields(0, 0, 0, MODEL.centreU);
+    // Dish sample points: unit fields once; any current setting is then a weighted sum.
+    MODEL.dish = dishPoints();
+    MODEL.dishU = new Float64Array(MODEL.dish.length * 9);
+    MODEL.dish.forEach((p, i) => unitFields(p[0], p[1], p[2], MODEL.dishU, 9 * i));
+    // Agreement with the build model.
+    let worst = 0;
+    const tmp = new Float64Array(9);
+    m.reference.points.forEach(rp => {
+      unitFields(rp.point_mm[0], rp.point_mm[1], rp.point_mm[2], tmp);
+      AXES.forEach((a, ai) => {
+        const ref = rp.uT_per_A[a], refm = Math.hypot(...ref);
+        const err = Math.hypot(tmp[3 * ai] - ref[0], tmp[3 * ai + 1] - ref[1], tmp[3 * ai + 2] - ref[2]) / refm;
+        worst = Math.max(worst, err);
+      });
+    });
+    STATE.ambOn = true;
+    const In = nullCurrents();
+    const saved = STATE.I; STATE.I = In;
+    const res = dishStats('total');
+    STATE.I = saved;
+    MODEL.check = { worst, nullMax: res.max, refMax: m.reference.null_residual_max_uT,
+                    nullI: In.map(i => i * 1000), refI: m.reference.null_currents_mA };
+    MODEL.ready = true;
+    buildFieldControls();
+    $('amb-note').textContent = `${MODEL.amb} µT on each of X, Y and Z — the worst-case assumption used by every model report, not a site survey.`;
+    $('model-check').innerHTML =
+      `<strong>Model check:</strong> this page recomputes the build's Biot–Savart model (${AXES.map(a => m.axes[a].loops_mm.length).reduce((s, n) => s + n, 0)} filament loops). ` +
+      `At ${m.reference.points.length} reference points it agrees with Python to ${(worst * 100).toExponential(1)} %; ` +
+      `nulling the ambient it gives ${MODEL.check.nullMax.toFixed(3)} µT max over the dishes vs ${MODEL.check.refMax.toFixed(3)} µT in <code>FIELD_UNIFORMITY.md</code>.`;
+    initField3D();
+    setQty('coils'); setScale('lin');
+    setPreset('xonly');
+  } catch (err) {
+    $('model-check').textContent = 'Could not load assets/cad/coil_model.json — run cad/build.py.';
+    console.error(err);
+  }
+}
+
+function dishStats(qty = 'total') {
+  const keep = STATE.qty; STATE.qty = qty;
+  const n = MODEL.geom.n_dishes, per = Array.from({ length: n }, () => ({ max: 0, sum: 0, cnt: 0 }));
+  let max = 0, sum = 0;
+  for (let i = 0; i < MODEL.dish.length; i++) {
+    const b = mag(quantityVec(MODEL.dishU, 9 * i)), d = per[MODEL.dish[i][3]];
+    d.max = Math.max(d.max, b); d.sum += b; d.cnt++; max = Math.max(max, b); sum += b;
+  }
+  STATE.qty = keep;
+  return { max, mean: sum / MODEL.dish.length, per };
+}
+
+// ====================================================== FIELD CONTROLS ====
+function buildFieldControls() {
+  $('current-ctls').innerHTML = AXES.map((a, i) => `
+    <div class="ctl">
+      <div class="ctl-head">
+        <span class="name"><span class="swatch" style="background:var(--ax-${a.toLowerCase()})"></span>${a}-axis pair</span>
+        <span><input type="number" id="num-${i}" min="-250" max="250" step="0.1" value="0" aria-label="${a} current in mA"> <span class="ctl-sub">mA</span></span>
+      </div>
+      <input type="range" id="rng-${i}" min="-250" max="250" step="0.1" value="0" aria-label="${a} current">
+      <div class="ctl-sub" id="sub-${i}">—</div>
+    </div>`).join('');
+  AXES.forEach((a, i) => {
+    const set = v => { STATE.I[i] = Math.max(-250, Math.min(250, v)) / 1000; STATE.preset = null; syncInputs(); fieldChanged(); };
+    $('rng-' + i).addEventListener('input', e => set(parseFloat(e.target.value)));
+    $('num-' + i).addEventListener('change', e => set(parseFloat(e.target.value) || 0));
+  });
+}
+function syncInputs() {
+  AXES.forEach((a, i) => {
+    const mA = STATE.I[i] * 1000;
+    $('rng-' + i).value = mA.toFixed(1); $('num-' + i).value = mA.toFixed(1);
+    $('sub-' + i).textContent = `${(MODEL.raw.axes[a].uT_per_A * STATE.I[i]).toFixed(2)} µT at the centre from this pair`;
+  });
+  document.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === STATE.preset)));
+}
+function setPreset(p) {
+  STATE.preset = p;
+  if (p === 'off') STATE.I = [0, 0, 0];
+  else if (p === 'null') STATE.I = nullCurrents();
+  else if (p === 'nullz') STATE.I = nullCurrents([0, 0, 100]);
+  else if (p === 'xonly') STATE.I = [0.1, 0, 0];
+  else if (p === 'max') STATE.I = [0.25, 0.25, 0.25];
+  STATE.I = STATE.I.map(i => Math.max(-MODEL.imax, Math.min(MODEL.imax, i)));
+  syncInputs(); fieldChanged();
+}
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => setPreset(b.dataset.preset)));
+$('amb-on').addEventListener('change', e => {
+  STATE.ambOn = e.target.checked;
+  if (STATE.preset === 'null' || STATE.preset === 'nullz') setPreset(STATE.preset); else fieldChanged();
+});
+
+function fmtB(b) { return b >= 100 ? b.toFixed(0) : b >= 10 ? b.toFixed(1) : b >= 1 ? b.toFixed(2) : b.toFixed(3); }
+function statusTag(b) {
+  const ok = b <= MODEL.target;
+  return `<span class="status ${ok ? 'good' : 'warn'}">${ok ? '✓ within' : '▲ above'} ${MODEL.target} µT</span>`;
+}
+function updateReadouts() {
+  const A = ambient(), c0 = coilVec(MODEL.centreU, 0);
+  const tc = [A[0] + c0[0], A[1] + c0[1], A[2] + c0[2]];
+  const ds = dishStats('total');
+  const p = STATE.I.reduce((s, I, i) => s + I * I * MODEL.ohms[i], 0);
+  $('field-stats').innerHTML = [
+    ['|B| at centre', fmtB(mag(tc)) + ' µT', `(${tc.map(v => v.toFixed(2)).join(', ')})`],
+    ['Worst |B| in dishes', fmtB(ds.max) + ' µT', statusTag(ds.max)],
+    ['Coil power', (p * 1000).toFixed(p < 1 ? 1 : 0) + ' mW', 'I²R, all three pairs'],
+  ].map(([k, v, s]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+  $('drive-body').innerHTML = AXES.map((a, i) => {
+    const I = STATE.I[i], V = Math.abs(I) * MODEL.ohms[i];
+    const vOk = V <= MODEL.vavail;
+    return `<tr><td><span class="swatch" style="display:inline-block;background:var(--ax-${a.toLowerCase()});margin-right:0.35rem;vertical-align:-1px"></span>${a}</td>` +
+      `<td class="num">${(I * 1000).toFixed(1)}</td><td class="num">${V.toFixed(2)}${vOk ? '' : ' ▲'}</td>` +
+      `<td class="num">${(I * I * MODEL.ohms[i] * 1000).toFixed(1)}</td><td class="num">${(MODEL.raw.axes[a].uT_per_A * I).toFixed(1)}</td></tr>`;
+  }).join('');
+  $('dish-body').innerHTML = ds.per.map((d, i) => {
+    const yc = (i - (MODEL.geom.n_dishes - 1) / 2) * MODEL.geom.dish_pitch_mm;
+    return `<tr><td>Dish ${i + 1}</td><td class="num">${yc.toFixed(1)}</td><td class="num">${fmtB(d.max)}</td><td class="num">${fmtB(d.sum / d.cnt)}</td><td>${statusTag(d.max)}</td></tr>`;
+  }).join('');
+}
+
+// ========================================================== COLOUR RAMP ====
+// One-hue sequential ramp (CoSE navy hue), interpolated in OKLab. Dark mode
+// flips the anchor: small values sit near the dark surface.
+function srgbToLin(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+function linToSrgb(c) { c = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055; return Math.round(Math.max(0, Math.min(1, c)) * 255); }
+function hexToOklab(h) {
+  const n = parseInt(h.slice(1), 16), r = srgbToLin(n >> 16 & 255), g = srgbToLin(n >> 8 & 255), b = srgbToLin(n & 255);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+}
+function oklabToRgb([L, a, b]) {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+  return [linToSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s), linToSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s), linToSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)];
+}
+let LUT = null;
+function buildLut() {
+  const stops = isDark() ? ['#14253D', '#2F5985', '#6E9BD1', '#DCEBFA'] : ['#EEF4FA', '#9DBBDD', '#3B6EA5', '#132C4B'];
+  const labs = stops.map(hexToOklab);
+  LUT = new Uint8ClampedArray(256 * 3);
+  for (let i = 0; i < 256; i++) {
+    const t = i / 255 * (labs.length - 1), k = Math.min(labs.length - 2, Math.floor(t)), f = t - k;
+    const c = oklabToRgb(labs[k].map((v, j) => v + (labs[k + 1][j] - v) * f));
+    LUT.set(c, i * 3);
+  }
+}
+const LOG_LO = -2, LOG_HI = 3;              // 0.01 µT … 1000 µT, fixed so settings compare
+const SCALE = { mode: 'log', lo: 0, hi: 1 };   // linear range is set from the current slice
+const tOf = b => SCALE.mode === 'log'
+  ? Math.max(0, Math.min(1, (Math.log10(Math.max(b, 1e-6)) - LOG_LO) / (LOG_HI - LOG_LO)))
+  : Math.max(0, Math.min(1, (b - SCALE.lo) / ((SCALE.hi - SCALE.lo) || 1)));
+const lutRgb = t => { const i = Math.round(t * 255) * 3; return [LUT[i], LUT[i + 1], LUT[i + 2]]; };
+
+// ============================================================ SLICE MAP ====
+const N = 101, EXT = 135;                    // grid points per side; half-extent (mm)
+const SLICE = { key: null, U: null, vals: null, vecs: null, busy: false };
+const PLANES = {   // horizontal axis, vertical axis, offset axis (CAD indices)
+  XY: { h: 0, v: 1, o: 2 }, XZ: { h: 0, v: 2, o: 1 }, YZ: { h: 1, v: 2, o: 0 },
+};
+function planePoint(i, j) {   // i: column (h), j: row from top (v descending)
+  const P = PLANES[STATE.plane], p = [0, 0, 0];
+  p[P.h] = -EXT + 2 * EXT * i / (N - 1); p[P.v] = EXT - 2 * EXT * j / (N - 1); p[P.o] = STATE.off;
+  return p;
+}
+async function computeSlice() {
+  const key = STATE.plane + ':' + STATE.off;
+  if (SLICE.key === key || SLICE.busy) { if (SLICE.busy) SLICE.pending = true; return; }
+  SLICE.busy = true;
+  const U = new Float64Array(N * N * 9);
+  const t0 = performance.now();
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) { const p = planePoint(i, j); unitFields(p[0], p[1], p[2], U, 9 * (j * N + i)); }
+    if (j % 10 === 9) { $('slice-status').textContent = `Computing ${STATE.plane} slice … ${Math.round(100 * (j + 1) / N)} %`; await new Promise(r => setTimeout(r)); }
+  }
+  SLICE.U = U; SLICE.key = key; SLICE.ms = performance.now() - t0; SLICE.busy = false;
+  if (SLICE.pending) { SLICE.pending = false; if ((STATE.plane + ':' + STATE.off) !== key) return computeSlice(); }
+  drawSlice();
+}
+function sliceValues() {
+  const vals = new Float64Array(N * N), vecs = new Float64Array(N * N * 3);
+  for (let k = 0; k < N * N; k++) { const v = quantityVec(SLICE.U, 9 * k); vecs.set(v, 3 * k); vals[k] = mag(v); }
+  SLICE.vals = vals; SLICE.vecs = vecs;
+  if (SCALE.mode === 'lin') {   // 2nd–98th percentile, so the near-wire spikes do not flatten the map
+    const sorted = Float64Array.from(vals).sort();
+    SCALE.lo = sorted[Math.floor(0.02 * (sorted.length - 1))]; SCALE.hi = sorted[Math.floor(0.98 * (sorted.length - 1))];
+    if (SCALE.hi - SCALE.lo < 1e-6) { SCALE.lo -= 0.5e-6; SCALE.hi += 0.5e-6; }
+  }
+}
+function sliceCanvas() {
+  const cv = $('slice'), dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth;
+  if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(w * dpr); }
+  return { cv, ctx: cv.getContext('2d'), W: cv.width, dpr };
+}
+function drawSlice() {
+  if (!SLICE.U || !$('slice').clientWidth) return;
+  sliceValues();
+  const { cv, ctx, W, dpr } = sliceCanvas();
+  const pad = 34 * dpr, plot = W - pad - 8 * dpr;           // left/bottom axis gutter
+  const ox = pad, oy = 8 * dpr;
+  const mm2px = plot / (2 * EXT);
+  const X = mmH => ox + (mmH + EXT) * mm2px, Y = mmV => oy + (EXT - mmV) * mm2px;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = css('--surface'); ctx.fillRect(0, 0, W, W);
+  // Heat map: one image pixel per sample, scaled smoothly.
+  const img = ctx.createImageData(N, N);
+  for (let k = 0; k < N * N; k++) { const c = lutRgb(tOf(SLICE.vals[k])); img.data.set([c[0], c[1], c[2], 255], 4 * k); }
+  const tmp = document.createElement('canvas'); tmp.width = N; tmp.height = N; tmp.getContext('2d').putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(tmp, ox, oy, plot, plot);
+  const ink = css('--text'), ink2 = css('--text-2'), muted = css('--muted');
+  // Target contour (0.5 µT) by marching squares on the sample grid.
+  ctx.save(); ctx.strokeStyle = ink; ctx.lineWidth = 1.5 * dpr; ctx.setLineDash([5 * dpr, 4 * dpr]); ctx.beginPath();
+  const T = MODEL.target, cell = plot / (N - 1);
+  const vAt = (i, j) => SLICE.vals[j * N + i];
+  const lerp = (a, b) => (T - a) / (b - a);
+  for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) {
+    const a = vAt(i, j), b = vAt(i + 1, j), c = vAt(i + 1, j + 1), d = vAt(i, j + 1);
+    const pts = [];
+    if ((a < T) !== (b < T)) pts.push([i + lerp(a, b), j]);
+    if ((b < T) !== (c < T)) pts.push([i + 1, j + lerp(b, c)]);
+    if ((d < T) !== (c < T)) pts.push([i + lerp(d, c), j + 1]);
+    if ((a < T) !== (d < T)) pts.push([i, j + lerp(a, d)]);
+    for (let q = 0; q + 1 < pts.length; q += 2) {
+      ctx.moveTo(ox + pts[q][0] * cell, oy + pts[q][1] * cell); ctx.lineTo(ox + pts[q + 1][0] * cell, oy + pts[q + 1][1] * cell);
+    }
+  }
+  ctx.stroke(); ctx.restore();
+  // Envelope outline.
+  const P = PLANES[STATE.plane], E = MODEL.geom.envelope_mm / 2;
+  ctx.strokeStyle = muted; ctx.lineWidth = 1 * dpr; ctx.setLineDash([2 * dpr, 3 * dpr]);
+  const envLo = [-E, -E, MODEL.geom.base_bottom_z_mm], envHi = [E, E, MODEL.geom.base_bottom_z_mm + 2 * E];
+  ctx.strokeRect(X(envLo[P.h]), Y(envHi[P.v]), (envHi[P.h] - envLo[P.h]) * mm2px, (envHi[P.v] - envLo[P.v]) * mm2px);
+  ctx.setLineDash([]);
+  // Dish cross-sections (dishes are cylinders along Y).
+  const g = MODEL.geom, r = g.dish_d_mm / 2;
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.5 * dpr;
+  for (let i = 0; i < g.n_dishes; i++) {
+    const yc = (i - (g.n_dishes - 1) / 2) * g.dish_pitch_mm, y0 = yc - g.dish_h_mm / 2, y1 = yc + g.dish_h_mm / 2;
+    if (STATE.plane === 'XZ') {
+      if (STATE.off >= y0 && STATE.off <= y1) { ctx.beginPath(); ctx.arc(X(0), Y(0), r * mm2px, 0, 2 * Math.PI); ctx.stroke(); }
+    } else {
+      const c = STATE.off; if (Math.abs(c) >= r) continue;
+      const w = Math.sqrt(r * r - c * c);
+      if (STATE.plane === 'XY') ctx.strokeRect(X(-w), Y(y1), 2 * w * mm2px, g.dish_h_mm * mm2px);   // h = x, v = y
+      else ctx.strokeRect(X(y0), Y(w), g.dish_h_mm * mm2px, 2 * w * mm2px);                          // h = y, v = z
+    }
+  }
+  // Where each coil's filaments cross the slice plane.
+  AXES.forEach((a, ai) => {
+    ctx.fillStyle = css('--ax-' + a.toLowerCase());
+    const s = MODEL.segs[ai], c = STATE.off / 1000;
+    for (let k = 0; k < s.length; k += 6) {
+      const p = s[k + P.o], q = s[k + 3 + P.o];
+      if ((p - c) * (q - c) > 0 || p === q) continue;
+      const t = (c - p) / (q - p);
+      const h = (s[k + P.h] + t * (s[k + 3 + P.h] - s[k + P.h])) * 1000, v = (s[k + P.v] + t * (s[k + 3 + P.v] - s[k + P.v])) * 1000;
+      ctx.fillRect(X(h) - 1.6 * dpr, Y(v) - 1.6 * dpr, 3.2 * dpr, 3.2 * dpr);
+    }
+  });
+  // Direction arrows (in-plane part of the selected vector).
+  if (STATE.arrows) {
+    const halo = css('--surface'), step = Math.max(5, Math.ceil(24 * dpr / cell)), L = step * cell * 0.42;
+    for (let j = 3; j < N; j += step) for (let i = 3; i < N; i += step) {
+      const k = j * N + i, vx = SLICE.vecs[3 * k + P.h], vy = SLICE.vecs[3 * k + P.v], m = SLICE.vals[k];
+      if (m < 1e-6) continue;
+      const frac = Math.hypot(vx, vy) / m;            // in-plane share
+      const cx = ox + i * cell, cy = oy + j * cell;
+      for (const [col, wid] of [[halo, 3.2], [ink, 1.2]]) {      // halo first, then ink: legible on any ramp step
+        ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = wid * dpr;
+        if (frac < 0.2) { ctx.beginPath(); ctx.arc(cx, cy, (wid / 2 + 1) * dpr, 0, 2 * Math.PI); ctx.fill(); continue; }
+        const ux = vx / Math.hypot(vx, vy), uy = -vy / Math.hypot(vx, vy), len = L * frac;
+        ctx.beginPath(); ctx.moveTo(cx - ux * len, cy - uy * len); ctx.lineTo(cx + ux * len, cy + uy * len); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + ux * len, cy + uy * len);
+        ctx.lineTo(cx + ux * len - (ux * 4.5 - uy * 3) * dpr, cy + uy * len - (uy * 4.5 + ux * 3) * dpr);
+        ctx.lineTo(cx + ux * len - (ux * 4.5 + uy * 3) * dpr, cy + uy * len - (uy * 4.5 - ux * 3) * dpr);
+        ctx.closePath(); ctx.fill(); if (col === halo) ctx.stroke();
+      }
+    }
+  }
+  // Axes: ticks every 50 mm.
+  ctx.fillStyle = muted; ctx.strokeStyle = css('--border'); ctx.font = `${10 * dpr}px JetBrains Mono, monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let t = -100; t <= 100; t += 50) {
+    ctx.fillText(String(t), X(t), oy + plot + 4 * dpr);
+    ctx.save(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(String(t), ox - 4 * dpr, Y(t)); ctx.restore();
+  }
+  const names = 'XYZ';
+  ctx.fillStyle = ink2; ctx.font = `600 ${11 * dpr}px Inter, sans-serif`;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText(names[P.h] + ' (mm) →', ox + plot, oy + plot + 16 * dpr);
+  ctx.save(); ctx.translate(4 * dpr, oy); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(names[P.v] + ' (mm) →', 0, 0); ctx.restore();
+  SLICE.geom = { ox, oy, plot, dpr, cell };
+  drawColorbar();
+  const qName = { total: '|B| total (ambient + coils)', coils: '|B| of the coils alone', dev: '|ΔB| from the centre value' }[STATE.qty];
+  $('slice-status').textContent = `${qName} on the ${STATE.plane} plane at ${names[P.o]} = ${STATE.off} mm · ${N}×${N} points, computed in ${Math.round(SLICE.ms)} ms in your browser. Model output, not a measurement.`;
+}
+function drawColorbar() {
+  const cv = $('colorbar'), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const h = $('slice').clientHeight, w = 64;
+  cv.style.height = h + 'px'; cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  const top = 8, bot = h - 34, bx = 4, bw = 14;
+  for (let y = top; y <= bot; y++) { const c = lutRgb(1 - (y - top) / (bot - top)); ctx.fillStyle = `rgb(${c})`; ctx.fillRect(bx, y, bw, 1.5); }
+  ctx.strokeStyle = css('--border'); ctx.strokeRect(bx, top, bw, bot - top);
+  ctx.fillStyle = css('--muted'); ctx.font = '10px JetBrains Mono, monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const yOf = b => top + (1 - tOf(b)) * (bot - top);
+  let ticks;
+  if (SCALE.mode === 'log') ticks = [0.01, 0.1, 1, 10, 100, 1000];
+  else {
+    const span = SCALE.hi - SCALE.lo, raw = span / 4, p10 = Math.pow(10, Math.floor(Math.log10(raw)));
+    const stepT = [1, 2, 5, 10].map(m => m * p10).find(x => x >= raw);
+    ticks = []; for (let t = Math.ceil(SCALE.lo / stepT) * stepT; t <= SCALE.hi + 1e-12; t += stepT) ticks.push(t);
+  }
+  const dec = v => (SCALE.mode === 'log' ? String(v) : fmtB(v));
+  ticks.forEach(b => { const y = yOf(b); ctx.fillRect(bx + bw, y, 3, 1); ctx.fillText(dec(b), bx + bw + 5, y); });
+  if (MODEL.target >= (SCALE.mode === 'log' ? 0.01 : SCALE.lo) && MODEL.target <= (SCALE.mode === 'log' ? 1000 : SCALE.hi)) {
+    const yt = yOf(MODEL.target); ctx.strokeStyle = css('--text'); ctx.setLineDash([3, 2]); ctx.beginPath(); ctx.moveTo(bx - 2, yt); ctx.lineTo(bx + bw + 2, yt); ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.fillStyle = css('--text-2'); ctx.font = '600 10px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(SCALE.mode === 'log' ? 'µT (log)' : 'µT (linear)', 2, h - 18);
+}
+function sliceLegend() {
+  $('slice-legend').innerHTML =
+    `<span><span class="line"></span>${MODEL.target} µT target contour</span>` +
+    `<span><span class="dish"></span>Dish cross-section</span>` +
+    AXES.map(a => `<span><span class="swatch" style="background:var(--ax-${a.toLowerCase()})"></span>${a}-pair windings crossing the plane</span>`).join('') +
+    `<span style="color:var(--muted)">Dashed box: 262 mm envelope</span>`;
+}
+// Hover read-out.
+$('slice').addEventListener('mousemove', e => {
+  if (!SLICE.vals || !SLICE.geom) return;
+  const r = $('slice').getBoundingClientRect(), g = SLICE.geom;
+  const px = (e.clientX - r.left) * g.dpr, py = (e.clientY - r.top) * g.dpr;
+  const i = Math.round((px - g.ox) / g.cell), j = Math.round((py - g.oy) / g.cell);
+  const tip = $('slice-tip');
+  if (i < 0 || j < 0 || i >= N || j >= N) { tip.style.display = 'none'; return; }
+  const k = j * N + i, p = planePoint(i, j), v = SLICE.vecs.subarray(3 * k, 3 * k + 3);
+  tip.innerHTML = `(${p.map(x => x.toFixed(0)).join(', ')}) mm<br>B = (${Array.from(v, x => (x < 0 ? '−' : '') + fmtB(Math.abs(x))).join(', ')}) µT<br><strong>${fmtB(SLICE.vals[k])} µT</strong>`;
+  tip.style.display = 'block';
+  const wrap = $('slice').parentElement.getBoundingClientRect();
+  let lx = e.clientX - wrap.left + 14, ly = e.clientY - wrap.top + 14;
+  if (lx + tip.offsetWidth > wrap.width) lx -= tip.offsetWidth + 28;
+  tip.style.left = lx + 'px'; tip.style.top = ly + 'px';
+});
+$('slice').addEventListener('mouseleave', () => { $('slice-tip').style.display = 'none'; });
+
+document.querySelectorAll('[data-plane]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-plane]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  STATE.plane = b.dataset.plane; $('off-name').textContent = 'XYZ'[PLANES[STATE.plane].o]; computeSlice();
+}));
+function setScale(m) {
+  SCALE.mode = m;
+  document.querySelectorAll('[data-scale]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.scale === m)));
+}
+document.querySelectorAll('[data-scale]').forEach(b => b.addEventListener('click', () => { setScale(b.dataset.scale); drawSlice(); updateField3D(); }));
+function setQty(q) {
+  document.querySelectorAll('[data-qty]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.qty === q)));
+  STATE.qty = q;
+}
+document.querySelectorAll('[data-qty]').forEach(b => b.addEventListener('click', () => {
+  setQty(b.dataset.qty); drawSlice(); updateField3D();
+}));
+let offTimer = null;
+$('slice-off').addEventListener('input', e => {
+  STATE.off = parseFloat(e.target.value); $('off-val').textContent = STATE.off + ' mm';
+  clearTimeout(offTimer); offTimer = setTimeout(computeSlice, 120);
+});
+$('arrows-on').addEventListener('change', e => { STATE.arrows = e.target.checked; drawSlice(); });
+
+// ============================================================= FIELD 3D ====
+let f3d = null;
+const F3D = { lattice: [], U: null, arrows: null, lines: null, dishes: null };
+function initField3D() {
+  f3d = makeViewer($('field3d'));
+  // Coils: the centre filament of each coil's 3 × 3 bundle, in its axis colour.
+  F3D.coilLines = [];
+  AXES.forEach((a, ai) => {
+    const loops = MODEL.raw.axes[a].loops_mm;
+    [4, 13].forEach(idx => {
+      const geo = new THREE.BufferGeometry().setFromPoints(loops[idx].map(p => new THREE.Vector3(p[0], p[1], p[2])));
+      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: new THREE.Color(css('--ax-' + a.toLowerCase())) }));
+      line.userData.axis = a; f3d.cad.add(line); F3D.coilLines.push(line);
+    });
+  });
+  // Dishes: translucent cylinders along CAD Y.
+  const g = MODEL.geom; F3D.dishes = new THREE.Group();
+  for (let i = 0; i < g.n_dishes; i++) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(g.dish_d_mm / 2, g.dish_d_mm / 2, g.dish_h_mm, 48),
+      new THREE.MeshStandardMaterial({ color: 0x9fb3c8, transparent: true, opacity: 0.25, depthWrite: false }));
+    m.position.set(0, (i - (g.n_dishes - 1) / 2) * g.dish_pitch_mm, 0); F3D.dishes.add(m);
+  }
+  f3d.cad.add(F3D.dishes);
+  // Arrow lattice: 7 × 7 × 7 points over ±96 mm; unit fields computed once.
+  const n = 7, R = 96;
+  for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) for (let c = 0; c < n; c++)
+    F3D.lattice.push([-R + 2 * R * a / (n - 1), -R + 2 * R * b / (n - 1), -R + 2 * R * c / (n - 1)]);
+  F3D.U = new Float64Array(F3D.lattice.length * 9);
+  F3D.lattice.forEach((p, i) => unitFields(p[0], p[1], p[2], F3D.U, 9 * i));
+  const cone = new THREE.ConeGeometry(3.6, 16, 10); cone.translate(0, 8, 0);
+  F3D.arrows = new THREE.InstancedMesh(cone, new THREE.MeshStandardMaterial({ roughness: 0.5 }), F3D.lattice.length);
+  F3D.arrows.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  f3d.cad.add(F3D.arrows);
+  f3d.frame(); f3d.radius = 185; f3d.view(VIEWS.iso);
+  tabResize.field = () => { f3d.resize(); drawSlice(); };
+  themeListeners.push(() => { f3d.setBg(); F3D.coilLines.forEach(l => l.material.color.set(css('--ax-' + l.userData.axis.toLowerCase()))); updateField3D(); });
+  $('f3d-arrows').addEventListener('change', e => { F3D.arrows.visible = e.target.checked; });
+  $('f3d-dishes').addEventListener('change', e => { F3D.dishes.visible = e.target.checked; });
+  $('f3d-lines').addEventListener('change', () => updateField3D());
+}
+function updateField3D() {
+  if (!f3d) return;
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+  let shown = 0;
+  F3D.lattice.forEach((p, i) => {
+    const v = quantityVec(F3D.U, 9 * i), b = mag(v);
+    const dir = b > 1e-9 ? new THREE.Vector3(v[0] / b, v[1] / b, v[2] / b) : up;
+    q.setFromUnitVectors(up, dir);
+    const t = tOf(b), k = 0.3 + 0.9 * t;             // stronger field, bigger arrow
+    m4.compose(new THREE.Vector3(p[0], p[1], p[2]), q, new THREE.Vector3(k, k, k));
+    F3D.arrows.setMatrixAt(i, m4);
+    const c = lutRgb(0.15 + 0.85 * t); col.setRGB(c[0] / 255, c[1] / 255, c[2] / 255);
+    F3D.arrows.setColorAt(i, col); shown++;
+  });
+  F3D.arrows.instanceMatrix.needsUpdate = true; if (F3D.arrows.instanceColor) F3D.arrows.instanceColor.needsUpdate = true;
+  clearTimeout(F3D.lineTimer);
+  if ($('f3d-lines').checked) F3D.lineTimer = setTimeout(traceLines, 200);
+  else if (F3D.lines) { f3d.cad.remove(F3D.lines); F3D.lines = null; }
+  const c0 = quantityVec(MODEL.centreU, 0);
+  $('f3d-status').textContent = `${shown} arrows · |field| at centre ${fmtB(mag(c0))} µT`;
+}
+// Field lines of the selected quantity, traced from a 3 × 3 × 3 seed grid (midpoint method, 3 mm steps).
+function traceLines() {
+  const tmp = new Float64Array(9);
+  const dirAt = (p) => { unitFields(p[0], p[1], p[2], tmp); const v = quantityVec(tmp, 0), b = mag(v); return b > 1e-9 ? [v[0] / b, v[1] / b, v[2] / b] : null; };
+  const segs = [], h = 3, steps = 70, lim = 125;
+  for (const sx of [-55, 0, 55]) for (const sy of [-55, 0, 55]) for (const sz of [-55, 0, 55]) {
+    for (const sgn of [1, -1]) {
+      let p = [sx, sy, sz];
+      for (let s = 0; s < steps; s++) {
+        const d1 = dirAt(p); if (!d1) break;
+        const mid = [p[0] + sgn * d1[0] * h / 2, p[1] + sgn * d1[1] * h / 2, p[2] + sgn * d1[2] * h / 2];
+        const d2 = dirAt(mid); if (!d2) break;
+        const nxt = [p[0] + sgn * d2[0] * h, p[1] + sgn * d2[1] * h, p[2] + sgn * d2[2] * h];
+        if (Math.max(Math.abs(nxt[0]), Math.abs(nxt[1]), Math.abs(nxt[2])) > lim) break;
+        segs.push(p[0], p[1], p[2], nxt[0], nxt[1], nxt[2]); p = nxt;
+      }
+    }
+  }
+  if (F3D.lines) f3d.cad.remove(F3D.lines);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(segs, 3));
+  F3D.lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color(css('--text-2')), transparent: true, opacity: 0.55 }));
+  f3d.cad.add(F3D.lines);
+}
+
+// ============================================================ UPDATES ====
+function fieldChanged() {
+  if (!MODEL.ready) return;
+  updateReadouts();
+  if (SLICE.U) drawSlice(); else computeSlice();
+  updateField3D();
+}
+themeListeners.push(() => { buildLut(); if (MODEL.ready) { drawSlice(); } });
+new ResizeObserver(() => { if (MODEL.ready && !$('panel-field').hidden) drawSlice(); }).observe($('slice'));
+
+// ======================================================== COST & BOM ====
+async function loadBom() {
+  try {
+    const b = await fetchJson('assets/cad/bom_summary.json');
+    const usd = v => '$' + Math.round(v).toLocaleString('en-US');
+    $('headroom-body').innerHTML = b.headroom.map(h =>
+      `<tr><td><strong>${h.tier}</strong></td><td class="num">${usd(h.price)}</td><td class="num">${usd(h.pcard_headroom)}</td>` +
+      `<td class="num">${usd(h.cogs_at_50)} / ${usd(h.cogs_at_60)} / ${usd(h.cogs_at_70)}</td></tr>`).join('');
+    $('bom-body').innerHTML = Object.entries(b.groups).map(([g, v]) =>
+      `<tr><td>${g}</td><td class="num">${v.lines}</td><td class="num">${v.pieces || '—'}</td></tr>`).join('');
+    $('bom-note').innerHTML = `${b.lines} lines generated from the parametric model, including ${b.wire_m} m of AWG${b.wire_awg} wire; ` +
+      `<strong>${b.priced_lines} priced</strong>. Full table: <code>cad/out/BOM.md</code>; quote file <code>cad/out/bom.csv</code>.`;
+  } catch (err) {
+    $('headroom-body').innerHTML = '<tr><td colspan="4">Could not load assets/cad/bom_summary.json — run cad/build.py.</td></tr>';
+    console.error(err);
+  }
+}
+
+// ============================================================== START ====
+buildLut();
+window.addEventListener('load', async () => {
+  showTab(location.hash.slice(1) || 'inspector', false);
+  loadCad(); loadSummary(); loadBom();
+  await loadModel();
+  if (MODEL.ready) sliceLegend();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "lines": 30,
+  "groups": {
+    "Printed": {
+      "lines": 13,
+      "pieces": 32
+    },
+    "Coil": {
+      "lines": 2,
+      "pieces": 0
+    },
+    "Fastener": {
+      "lines": 5,
+      "pieces": 68
+    },
+    "Purchased": {
+      "lines": 10,
+      "pieces": 0
+    }
+  },
+  "headroom": [
+    {
+      "tier": "Maker",
+      "price": 699,
+      "pcard_headroom": 4301,
+      "cogs_at_50": 349.5,
+      "cogs_at_60": 279.6,
+      "cogs_at_70": 209.70000000000002
+    },
+    {
+      "tier": "Academic",
+      "price": 2290,
+      "pcard_headroom": 2710,
+      "cogs_at_50": 1145.0,
+      "cogs_at_60": 916.0,
+      "cogs_at_70": 687.0000000000001
+    },
+    {
+      "tier": "Pro",
+      "price": 4850,
+      "pcard_headroom": 150,
+      "cogs_at_50": 2425.0,
+      "cogs_at_60": 1940.0,
+      "cogs_at_70": 1455.0000000000002
+    }
+  ],
+  "pcard_limit": 5000,
+  "wire_m": 731,
+  "wire_awg": 24,
+  "priced_lines": 0
+}
